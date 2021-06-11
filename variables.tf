@@ -10,7 +10,7 @@ variable "region" {
 
 variable "additional_tags" {
   default     = {
-    Svc      = "AWS Network Firewall (anfw) Testing"
+    Svc      = "anfw - AWS Network Firewall Testing"
     SvcOwner = "OllieJC"
     SvcLink  = "https://github.com/OllieJC/aws-network-firewall-testing"
   }

@@ -1,0 +1,82 @@
+resource "aws_networkfirewall_firewall_policy" "anfw_policy" {
+  name = "firewall-policy"
+  firewall_policy {
+    stateless_default_actions          = ["aws:forward_to_sfe"]
+    stateless_fragment_default_actions = ["aws:forward_to_sfe"]
+    stateful_rule_group_reference {
+      resource_arn = aws_networkfirewall_rule_group.any.arn
+    }
+  }
+
+  tags = merge(
+    var.additional_tags,
+    {
+      Name = "anfw-policy-${var.test_case}"
+    },
+  )
+}
+
+resource "aws_networkfirewall_rule_group" "any" {
+  capacity = 1
+  name     = "any"
+  type     = "STATEFUL"
+  rule_group {
+    rules_source {
+      stateful_rule {
+        action = "ALERT"
+        header {
+          destination      = "ANY"
+          destination_port = "ANY"
+          direction        = "ANY"
+          protocol         = "IP"
+          source           = "ANY"
+          source_port      = "ANY"
+        }
+        rule_option {
+          keyword = "sid:50"
+        }
+      }
+    }
+  }
+
+  tags = merge(
+    var.additional_tags,
+    {
+      Name = "anfw-rule-any-${var.test_case}"
+    },
+  )
+}
+
+resource "aws_networkfirewall_firewall" "anfw" {
+  name                = "NetworkFirewall"
+  firewall_policy_arn = aws_networkfirewall_firewall_policy.anfw_policy.arn
+  vpc_id              = aws_vpc.main.id
+
+  subnet_mapping {
+    subnet_id = aws_subnet.fw-a.id
+  }
+
+  tags = merge(
+    var.additional_tags,
+    {
+      Name = "anfw-${var.test_case}"
+    },
+  )
+}
+
+resource "aws_cloudwatch_log_group" "anfw_alert_log_group" {
+  name = "/aws/network-firewall/alert"
+}
+
+resource "aws_networkfirewall_logging_configuration" "anfw_alert_logging_configuration" {
+  firewall_arn = aws_networkfirewall_firewall.anfw.arn
+  logging_configuration {
+    log_destination_config {
+      log_destination = {
+        logGroup = aws_cloudwatch_log_group.anfw_alert_log_group.name
+      }
+      log_destination_type = "CloudWatchLogs"
+      log_type             = "ALERT"
+    }
+  }
+}

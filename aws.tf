@@ -5,7 +5,7 @@ terraform {
       source  = "hashicorp/aws"
 
       default_tags = {
-        Svc      = "AWS Network Firewall (anfw) Testing"
+        Svc      = "anfw - AWS Network Firewall Testing"
         SvcOwner = "OllieJC"
         SvcLink  = "https://github.com/OllieJC/aws-network-firewall-testing"
       }
