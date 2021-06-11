@@ -98,6 +98,29 @@ resource "aws_networkfirewall_rule_group" "stateless" {
           }
         }
         stateless_rule {
+          priority = 31
+          rule_definition {
+            actions = ["aws:forward_to_sfe"]
+            match_attributes {
+              source {
+                address_definition = "10.0.0.0/8"
+              }
+              source_port {
+                from_port = 0
+                to_port   = 65535
+              }
+              destination {
+                address_definition = "0.0.0.0/0"
+              }
+              destination_port {
+                from_port = 80
+                to_port   = 80
+              }
+              protocols = [6, 17]
+            }
+          }
+        }
+        stateless_rule {
           priority = 99
           rule_definition {
             actions = ["aws:drop"]
