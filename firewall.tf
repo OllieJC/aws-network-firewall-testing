@@ -29,12 +29,12 @@ resource "aws_networkfirewall_rule_group" "stateless" {
     rules_source {
       stateless_rules_and_custom_actions {
         stateless_rule {
-          priority = 1
+          priority = 10
           rule_definition {
             actions = ["aws:pass"]
             match_attributes {
               source {
-                address_definition = "10.0.0.0/8"
+                address_definition = "0.0.0.0/0"
               }
               source_port {
                 from_port = 0
@@ -52,12 +52,35 @@ resource "aws_networkfirewall_rule_group" "stateless" {
           }
         }
         stateless_rule {
-          priority = 2
+          priority = 11
           rule_definition {
             actions = ["aws:pass"]
             match_attributes {
               source {
-                address_definition = "10.0.0.0/8"
+                address_definition = "0.0.0.0/0"
+              }
+              source_port {
+                from_port = 123
+                to_port   = 123
+              }
+              destination {
+                address_definition = "0.0.0.0/0"
+              }
+              destination_port {
+                from_port = 0
+                to_port   = 65535
+              }
+              protocols = [17]
+            }
+          }
+        }
+        stateless_rule {
+          priority = 20
+          rule_definition {
+            actions = ["aws:pass"]
+            match_attributes {
+              source {
+                address_definition = "0.0.0.0/0"
               }
               source_port {
                 from_port = 0
@@ -75,12 +98,35 @@ resource "aws_networkfirewall_rule_group" "stateless" {
           }
         }
         stateless_rule {
+          priority = 21
+          rule_definition {
+            actions = ["aws:pass"]
+            match_attributes {
+              source {
+                address_definition = "0.0.0.0/0"
+              }
+              source_port {
+                from_port = 5432
+                to_port   = 5432
+              }
+              destination {
+                address_definition = "0.0.0.0/0"
+              }
+              destination_port {
+                from_port = 0
+                to_port   = 65535
+              }
+              protocols = [6]
+            }
+          }
+        }
+        stateless_rule {
           priority = 30
           rule_definition {
             actions = ["aws:forward_to_sfe"]
             match_attributes {
               source {
-                address_definition = "10.0.0.0/8"
+                address_definition = aws_vpc.main.cidr_block
               }
               source_port {
                 from_port = 0
@@ -103,7 +149,30 @@ resource "aws_networkfirewall_rule_group" "stateless" {
             actions = ["aws:forward_to_sfe"]
             match_attributes {
               source {
-                address_definition = "10.0.0.0/8"
+                address_definition = "0.0.0.0/0"
+              }
+              source_port {
+                from_port = 443
+                to_port   = 443
+              }
+              destination {
+                address_definition = aws_vpc.main.cidr_block
+              }
+              destination_port {
+                from_port = 0
+                to_port   = 65535
+              }
+              protocols = [6, 17]
+            }
+          }
+        }
+        stateless_rule {
+          priority = 32
+          rule_definition {
+            actions = ["aws:forward_to_sfe"]
+            match_attributes {
+              source {
+                address_definition = aws_vpc.main.cidr_block
               }
               source_port {
                 from_port = 0
@@ -115,6 +184,29 @@ resource "aws_networkfirewall_rule_group" "stateless" {
               destination_port {
                 from_port = 80
                 to_port   = 80
+              }
+              protocols = [6, 17]
+            }
+          }
+        }
+        stateless_rule {
+          priority = 33
+          rule_definition {
+            actions = ["aws:forward_to_sfe"]
+            match_attributes {
+              source {
+                address_definition = "0.0.0.0/0"
+              }
+              source_port {
+                from_port = 80
+                to_port   = 80
+              }
+              destination {
+                address_definition = aws_vpc.main.cidr_block
+              }
+              destination_port {
+                from_port = 0
+                to_port   = 65535
               }
               protocols = [6, 17]
             }
@@ -148,7 +240,13 @@ resource "aws_networkfirewall_rule_group" "allow_domains" {
       rules_source_list {
         generated_rules_type = "ALLOWLIST"
         target_types         = ["HTTP_HOST", "TLS_SNI"]
-        targets              = var.allowed_https_domains
+        targets              = concat(
+          var.allowed_https_domains,
+          [
+            "amazonlinux-2-repos-${var.region}.s3.${var.region}.amazonaws.com",
+            "amazonlinux.${var.region}.amazonaws.com"
+          ]
+        )
       }
     }
   }
